@@ -1,0 +1,93 @@
+
+# NGINX
+- ACT like "Proxy(forward to server)" or "Server(itself)" 
+
+## Web Server
+- refers to both the physical machine and software running on the machine.
+- primary function is to serve `web pages to client browser's`.
+
+NB: NGINX is a `high performance web server`.
+	piece of software on a server, that handles HTTP requests.
+	
+## NGINX(act as a load balancer)
+- distributes incoming traffic across multiple backend servers.
+- to balance the load, improve performance and provide redundancy.
+
+NB: "Caching" is a core feature of NGINX Proxy.
+	- One entry point...for more servers....security,centralized access control,monitoring.
+	
+NB: "Encrypted communication"
+	- Enforce "Https"
+NB: "Compression"
+
+## Functionality of NGINX as a Proxy Server
+- Load Balancing
+- Caching
+- Security
+- Compression and Segmentation
+
+## Configure NINX(nginx.config)
+
+## STEPS:
+- install NGINX
+	- RUN: whereis nginx
+	- RUN: nginx -V
+	- look at '/opt/homebrew/etc/nginx/nginx.conf'
+	- RUN: cat /opt/homebrew/etc/nginx/nginx.conf
+
+NB: In this scenario we focused on ...`Load balance to 3 backend servers` (NGINX)
+
+## nginx.config:
+- 'worker_processes'
+	- controls how many parallel processes Nginx spawns to handle client requests
+	- 'number': should be tuned according to the server's hardware (CPU cores) and expected traffic load (directly proportional to 'performance')
+- 'worker_connections'
+	- per worker process: how many simultaneous connections can be opened.
+	- for example: for worker_process: 1...worker_connections: 1024;
+- 'http'
+	- configuration specific to HTTP and affecting all virtual servers
+	- 'listen': ip address and port on which the server accept requests.
+	- 'server_name': which domain or ip address this server block should respond to.
+	- 'location': root(/) URL, will apply to all requests unless more specific location blocks are defined.
+		- Location Block
+			- 'proxy_pass': telling nginx to pass the request to another 'server', making it act as a reverse proxy.
+		- Upstream Block
+			- 'upstream': refers to servers that nginx forwards requests to
+				- 'least_conn': "How" does NGINX decide to which server to forward the request to?
+			- Upstream servers = Refers to traffic going from a client towards the source or higher-level infra, in this case application server.
+			- Downstream servers = traffic going back to the client is 'downstream'
+		- 'proxy_set_header'
+			- we want to forward info from the `original client` requests to `backend servers`
+		- 'proxy_set_header X-Real-IP'
+			-when NGINX acts as a reverse proxy, the requests comming to the backend servers originate from NGINX, "not directly from the client".
+			- As a result, backend servers would see the ip address of the NGINX server as the source of the request.
+	- 'include mime.types'
+		- tell NGINX to include the corresponding `MIME types` in the content-type respond 'header', when sending file.
+
+
+## configure Https - Encrypted communication
+1. obtain an ssl/tls certificate
+	- generate a self-signed certificate ... 'generate and signed by server itself'
+	- CA-Signed certificate ... 'authenticated by trusted certificate authority'
+		- Trusted by browsers (no warnings)
+
+- Generate a self-signed certificate
+
+RUN: mkdir nginx-certs
+RUN: cd nginx-certs
+RUN: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx-selfsigned.key -out nginx-selfsigned.crt
+	- 'openssl req': initiates a certificate request generation process
+	- '-x509': tells openssl to output a certificate in this standard certificate format
+	- '-nodes': tells openssl not to encrypt the private key with passphrase
+	- '-days 365': specifies validity peroid of certificate, in this case 1 year
+	- 'newkey rsa:2048': creates a 2048-bit RSA key pair,
+	   RSA = most common public-key encryption algorithm
+	
+	- '-keyout nginx-selfsigned.key': output file for generated private key
+	- '-out nginx-selfsigned.crt': output file for the self-signed certificate...contains 'public key'
+
+- configure the server to listen on port 443: is standard port for HTTPS traffic, enableing SSL for secure communication.
+RUN: nginx -h
+RUN: nginx -s reload
+
+
